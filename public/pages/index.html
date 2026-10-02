@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<!--<meta name="viewport" content="width=device-width, initial-scale=1">-->
+		<title>Welcome To Worlde</title>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="js/index.js" defer></script>
+        <link rel="stylesheet" href="css/myStyle.css">
+	</head>
+	<body>
+        <div id="gameContainer">
+            <h1>Welcome to Wordle!</h1>
+            <p>Guess the word in 6 tries. Here are the rules:
+                Only English Characters are allowed as input
+                If you guess a correct letter but in the wrong position, it will be highlighted in yellow.
+                If you guess a correct letter in the correct position, it will be highlighted in green.
+                Any wrong letters will remain unhighlighted. Good luck and enjoy the game!
+            </p>
+        </div>
+        <div id="contentContainer">
+        </div>
+        <div id="errorMessage" hidden></div>
+	</body>
+</html>
