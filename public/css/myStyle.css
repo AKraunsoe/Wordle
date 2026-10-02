@@ -1,7 +1,17 @@
 button {
-    color: green;
+    margin-top: 25px !important;
+    background-color: lightskyblue !important;
 }
 
 #errorMessage {
     color: red;
+}
+
+.letterInput {
+    display: inline-block !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 40px;
+    font-weight: bold;
+    text-align: center;
 }

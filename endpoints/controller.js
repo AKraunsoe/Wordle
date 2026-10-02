@@ -4,21 +4,17 @@ const app = express();
 const words = require('../words.json')?.words;
 const helpers = require('../helpers/helpers');
 
-const playGame = (req, res) => {
-    let selectedWord = helpers.selectRandomWord(words);
-    try {
-      req.session.selectedWord = selectedWord.toUpperCase();
-    } catch (error) {
-      console.log(error)
-    }
-    
-    res.json({success: !!selectedWord, 
+const startGame = (req, res) => {
+    const success = helpers.selectRandomWord(words, req);
+
+    res.json({success: success, 
       file: "/pages/content/game.html"});
 }
 
 const guessWord = (req, res) => {
+    const wordObject = req.session.wordObject;
     const selectedWord = req.session.selectedWord;
-    if(!selectedWord) {
+    if(!wordObject || !selectedWord) {
         res.status(400).json({success: false, message: "No word to match versus. Please try starting a new game."});
         return;
     }
@@ -29,8 +25,12 @@ const guessWord = (req, res) => {
         return;
     }
 
-    let result = helpers.matchGuess(selectedWord, guess);
+    let result = helpers.matchGuess(wordObject, guess);
     res.json({success: true, result: result});
 }
 
-module.exports = { playGame, guessWord };
+const getWord = (req, res) => {
+  res.json({word: req.session.selectedWord})
+}
+
+module.exports = { startGame, guessWord, getWord };
