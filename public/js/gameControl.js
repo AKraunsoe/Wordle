@@ -1,11 +1,16 @@
 const { showErrorMessage } = require('./messaging');
 const { startGame, guess, getWord } = require('./backendCalls');
-const { loadStartButton } = require('./index');
+const { loadStartButton, loadDifficultyButtons } = require('./index');
 const { createInputs } = require('./htmlInjection')
 const { clearModalContent, hideModal } = require('./modalControls')
 
 $(document).on("click", "#startGame", (e) =>{
-    startGame(e);
+    loadDifficultyButtons();
+});
+
+$(document).on("click", ".startGame", function(e) {
+    const $this = $(this);
+    startGame(e, $this.attr('data-length'));
 });
 
 $(document).on("click", "#guess", (e) => {
@@ -43,16 +48,15 @@ $(document).on("keydown", ".letterInput", function(e) {
         }
     }
 
-
 })
 
-$(document).on("keyup", '.fifthLetter', function(e) {
+$(document).on("keyup", '.lastLetter', function(e) {
     e.preventDefault();
     if(e.key != "Enter" || e.which != 13){
         return;
     }
     const $this = $(this);
-    const siblings = $this.siblings("input");
+    const siblings = $this.closest('.inputContainer').find("input");
     for(let i = 0; i < siblings.length; i++){
         let sibling = $(siblings[i]);
         if(!sibling.val()){
@@ -68,19 +72,32 @@ $(document).on('click', '#back', function(e) {
     hideModal();
 })
 
+const getCurrentDifficulty = () => {
+    return $(document).find(".inputContainer").first().find('input').length
+}
+
 $(document).on('click', '#playAgain', function(e) {
     clearModalContent();
     hideModal();
-    startGame(e);
+    startGame(e, getCurrentDifficulty())
+})
+
+$(document).on('click', "#changeDifficulty", function(e) {
+    hideModal();
+    loadDifficultyButtons();
 })
 
 $(document).on('click', '#moreAttempts', function(e) {
     clearModalContent();
-    createInputs(0, 3, $(document).find('.inputContainer').length);
+    createInputs(0, 3, getCurrentDifficulty(),$(document).find('.inputContainer').length);
     $(document).find('.valid').find('input').first().trigger('focus');
     hideModal();
 })
 
 $(document).on('click', '#showWord', function(e) {
     getWord(e);
+})
+
+$(document).on('click', '#modals .close', function(e){
+    hideModal();
 })

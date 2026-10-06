@@ -5,8 +5,13 @@ $(() => {
 });
 
 const loadStartButton = () => {
-    $("#contentContainer").empty()
+    $("#contentContainer").empty();
     $("#contentContainer").load("pages/content/startButton.html");
 }
 
-module.exports = { loadStartButton }
+const loadDifficultyButtons = () => {
+    $("#contentContainer").empty();
+    $("#contentContainer").load("pages/content/difficultyButtons.html");
+}
+
+module.exports = { loadStartButton, loadDifficultyButtons }

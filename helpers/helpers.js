@@ -1,5 +1,6 @@
 
-const selectRandomWord = (words, req) => {
+const selectRandomWord = async (difficulty, req) => {
+    const words = await getWords(difficulty)
     const wordCount = words.length || -1;
     if(wordCount <= 0) {
         return null;
@@ -9,12 +10,27 @@ const selectRandomWord = (words, req) => {
     if(!word){
         return false;
     }
+    //req.session.selectedWord = "APPLE";
     req.session.selectedWord = word;
-    createWordObject(word, req);
+    //const wordObject = createWordObject(word);
+    //req.session.wordObject = wordObject;
     return true;
 };
 
-const createWordObject = (word, req) => {
+const getWords = async (length) => {
+    const response = await fetch('https://raw.githubusercontent.com/dwyl/english-words/master/words_dictionary.json');
+    const wordsData = await response.json();
+    const possibleWords = [];
+
+    Object.keys(wordsData).forEach(word =>{
+        if(word.length == length){
+            possibleWords.push(word);
+        }
+    })
+    return possibleWords;
+}
+
+const createWordObject = (word) => {
 
     const letters = word.split('');
     let wordObject = {};
@@ -31,35 +47,58 @@ const createWordObject = (word, req) => {
         }
     }
 
-    req.session.wordObject = wordObject;
+    return wordObject;
 
 }
 
-const matchGuess = (wordObject, guess) => {
-    let result = [];
-    const foundLetterObject = {}
+const createResultArray = (difficulty) => {
+    let result = []
+    for (let i = 0; i < difficulty; i++) {
+        result.push(0);        
+    }
+    return result;
+}
+
+const matchGuess = (word, guess, difficulty) => {
+    const guessWordObject = createWordObject(guess);
+    const wordObject = createWordObject(word);
+    let result = createResultArray(difficulty);
+    const updatedObject = {}
     for(let i = 0; i < guess.length; i++){
+        
         let letter = guess[i];
-        if(!wordObject[letter]){
-            result.push(0);
-            continue;
-        }
 
-        if(!foundLetterObject[letter]){
-            foundLetterObject[letter] = 1
-        }else{
-            foundLetterObject[letter]++;
-        }
+        if(wordObject[letter] && wordObject[letter].count){
+            updatedObject[letter] = {position: [], count : 0}
 
-        if(foundLetterObject[letter] > wordObject[letter].count){
-            result.push(0);
-            continue;
-        }
+            for (let j = 0; j < guessWordObject[letter].position.length; j++) {
+                if(wordObject[letter].position.indexOf(guessWordObject[letter].position[j]) != -1){
+                    result[guessWordObject[letter].position[j]] = 2
+                    updatedObject[letter].position.push(wordObject[letter].position[j])
+                    updatedObject[letter].count++;
+                }
+                if(updatedObject[letter].count == wordObject[letter].count){
+                    break;
+                }
+            }
 
-        if(wordObject[letter].position.indexOf(i) != -1){
-            result.push(2);
-        }else{
-            result.push(1);
+            let index = 0;
+            while (wordObject[letter].count != updatedObject[letter].count){
+                
+                if(updatedObject[letter].count > wordObject[letter].count || 
+                    index > 4 || 
+                    index >= guessWordObject[letter].position.length){
+                    break;
+                }
+                if(result[guessWordObject[letter].position[index]] == 0){
+                    result[guessWordObject[letter].position[index]] = 1
+                    updatedObject[letter].count++;
+                    updatedObject[letter].position.push(guessWordObject[letter].position[index]);
+                }
+                index++;
+            }
+
+            wordObject[letter].count = 0;
         }
 
     }
