@@ -1,0 +1,26 @@
+{
+  "name": "wordle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack && node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "body-parser": "^2.3.0",
+    "bootstrap": "^5.3.8",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "jquery": "^4.0.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "webpack": "^5.111.1",
+    "webpack-cli": "^7.2.3"
+  }
+}
