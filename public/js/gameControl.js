@@ -67,6 +67,19 @@ $(document).on("keyup", '.lastLetter', function(e) {
     $(document).find("#guess").trigger('click');
 })
 
+$(document).on("click", '#createAccountSubmit', function (e) {
+  e.preventDefault();
+
+})
+
+$(document).on('click', "login", function (e) {
+  e.preventDefault();
+})
+
+const handleAccountForm = () => {
+  const form = $("createAccountForm");
+}
+
 $(document).on('click', '#back', function(e) {
     loadStartButton();
     hideModal();

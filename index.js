@@ -31,6 +31,9 @@ app.post('/game/guess', (req, res) => {
     controller.guessWord(req, res);
 });
 
+app.post('/game/createAccount', (req, res) => {
+  controller.createAccount(req, res);
+})
 
 
 app.listen(port, () => {

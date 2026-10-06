@@ -54,7 +54,7 @@ const createWordObject = (word) => {
 const createResultArray = (difficulty) => {
     let result = []
     for (let i = 0; i < difficulty; i++) {
-        result.push(0);        
+        result.push(0);
     }
     return result;
 }
@@ -65,7 +65,7 @@ const matchGuess = (word, guess, difficulty) => {
     let result = createResultArray(difficulty);
     const updatedObject = {}
     for(let i = 0; i < guess.length; i++){
-        
+
         let letter = guess[i];
 
         if(wordObject[letter] && wordObject[letter].count){
@@ -84,9 +84,9 @@ const matchGuess = (word, guess, difficulty) => {
 
             let index = 0;
             while (wordObject[letter].count != updatedObject[letter].count){
-                
-                if(updatedObject[letter].count > wordObject[letter].count || 
-                    index > 4 || 
+
+                if(updatedObject[letter].count > wordObject[letter].count ||
+                    index > 4 ||
                     index >= guessWordObject[letter].position.length){
                     break;
                 }
@@ -106,5 +106,10 @@ const matchGuess = (word, guess, difficulty) => {
     return result;
 }
 
-module.exports = { selectRandomWord, 
-                    matchGuess };
+const login = (account) => {
+
+}
+
+module.exports = { selectRandomWord,
+  matchGuess,
+  login};

@@ -18,7 +18,7 @@ const startGame = (e, difficulty) => {
                         $.get("pages/modal/buttons/backToStart.html",'', (data) => { $("#contentContainer").find('#game-buttons').append(data) });
                     }
                 });
-                             
+
             }else{
                 showErrorMessage("Error: Could not start the game. Please try again.");
             }
@@ -84,13 +84,13 @@ const guess = (e) => {
             }
 
             let nextContainers = $(".inputContainer.invalid");
-            
+
             if(!nextContainers || !nextContainers.length){
                 const modalContent = returnAndClearModalContent();
                 showLoseCondition(modalContent, attempts);
                 return;
             }
-            
+
             nextContainers.first().removeClass("invalid").addClass("valid");
             nextContainers.first().find("input").removeAttr("disabled");
             nextContainers.first().find("input").first().trigger("focus");
@@ -110,7 +110,7 @@ const getWord = (e) => {
         method: "GET",
         success: (data) => {
             if(data.word) {
-                $(document).find("#correctWord").empty().append(data.word);            
+                $(document).find("#correctWord").empty().append(data.word);
             }else{
                 showErrorMessage("Error: Could not get the word");
             }
@@ -122,7 +122,52 @@ const getWord = (e) => {
     })
 }
 
+const createAccount = (username, password) => {
+  e.preventDefault();
+  $.ajax({
+    url: "/game/createAccount",
+    method: "POST",
+    data: JSON.stringify({"username": username, "password": password}),
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: (data) => {
+        if(data.word) {
+            $(document).find("#correctWord").empty().append(data.word);
+        }else{
+            showErrorMessage("Error: Could not get the word");
+        }
+    },
+    error: (error) => {
+        showErrorMessage("Error: Could not retrieve the word");
+        console.log("Start error: ", error);
+    }
+  })
+}
+
+const login = (username, password) => {
+  e.preventDefault();
+  $.ajax({
+    url: "/game/login",
+    method: "POST",
+    data: JSON.stringify({"username": username, "password": password}),
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: (data) => {
+        if(data.word) {
+            $(document).find("#correctWord").empty().append(data.word);
+        }else{
+            showErrorMessage("Error: Could not get the word");
+        }
+    },
+    error: (error) => {
+        showErrorMessage("Error: Could not retrieve the word");
+        console.log("Start error: ", error);
+    }
+  })
+}
+
 module.exports = { getWord,
     startGame,
-    guess
+    guess,
+    createAccount
 }
