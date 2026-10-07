@@ -19,6 +19,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/pages', 'index.html'));
 });
 
+// Game Functionality
 app.get('/game/start', (req, res) => {
     controller.startGame(req, res);
 });
@@ -31,10 +32,23 @@ app.post('/game/guess', (req, res) => {
     controller.guessWord(req, res);
 });
 
-app.post('/game/createAccount', (req, res) => {
+// Account Functionality
+app.post('/account/createAccount', (req, res) => {
   controller.createAccount(req, res);
 })
 
+app.post('/account/login', (req, res) => {
+  controller.login(req, res);
+})
+
+// On Load Functionality
+app.get('/game/words', async(req, res) => {
+  await controller.createWords(req, res);
+})
+
+app.get('/account/loggedIn', (req, res) => {
+  controller.checkLoggedIn(req, res);
+})
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

@@ -46,20 +46,20 @@ const getWord = (req, res) => {
   res.json({word: req.session.selectedWord})
 }
 
-const createAccount = (req, res) => {
+const createAccount = async (req, res) => {
   const body = req.body;
   const username = body.username;
   const password = body.password;
 
-  if (queries.getAccount()) {
+  if (await queries.getAccount()) {
     res.status(400).json({ success: false, message: "User already exists, please try another one" });
     return;
   }
 
-  const account = queries.createAccount();
+  const account = await queries.createAccount(username, password);
 
   if (account) {
-    helpers.login(account);
+    helpers.login(username, password);
     res.status(200).json({ success: true });
     return
   }
@@ -67,19 +67,44 @@ const createAccount = (req, res) => {
   res.status(400).json({ success: false, message: "Unable to create user, please try again" });
 }
 
-const login = (req, res) => {
+const login = async (req, res) => {
   const body = req.body;
   const username = body.username;
   const password = body.password;
 
-  if (!queries.getAccount()) {
+  if (await !queries.getAccount(username)) {
     res.status(400).json({ success: false, message: "Account not found, please try again" });
     return;
   }
 
-  helpers.login(account);
+  await helpers.login(username, password);
   res.status(200).json({ success: true });
-
 }
 
-module.exports = { startGame, guessWord, getWord, createAccount };
+const createWords = async (req, res) => {
+  let words = await queries.getAllWords();
+  if(words.rowCount !== 2000){
+    words = await helpers.createWords();
+  }
+
+  if(words?.length >= 2000 || words?.rowCount >= 2000){
+    res.status(200).json({success: true})
+    return
+  }
+
+  res.status(400).json({success: false, message: "Could not find words"});
+}
+
+const checkLoggedIn = (req, res) => {
+  //check if logged in
+  res.status(200).json({success: false})
+}
+
+module.exports = { 
+  startGame, 
+  guessWord, 
+  getWord, 
+  createAccount, 
+  login, 
+  createWords,
+  checkLoggedIn };

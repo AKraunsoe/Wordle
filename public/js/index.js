@@ -1,17 +1,42 @@
+const {createWordList, checkLoggedIn} = require('./backendCalls');
 
 $(() => {
-    console.log("test");
-    loadStartButton()
+    const now = new Date().getMilliseconds()
+    console.log("test ");
+    loadStartScreen();
+    console.log("test 2 " + now-new Date().getMilliseconds());
 });
 
-const loadStartButton = () => {
+$(async () => {
+    const now = new Date().getMilliseconds()
+    console.log("test async");
+    await createWordList();
+    console.log("test async 2 " + now-new Date().getMilliseconds());
+});
+
+const clearContent = () => {
     $("#contentContainer").empty();
-    $("#contentContainer").load("pages/content/startButton.html");
+}
+
+const loadStartScreen = () => {
+    clearContent()
+    loadContent("pages/content/startPage.html", async (response, status, xhr) => {
+        const loggedIn = await checkLoggedIn()
+        if(status != "error" && !loggedIn.success){
+            //jQuery.ajaxSetup({async: true});
+            $.get("pages/content/buttons/createAccount.html", "", (data) => { $("#contentContainer").append(data) })
+            $.get("pages/content/loginForm.html",'', (data) => { $("#contentContainer").append(data) });
+        }
+    });
 }
 
 const loadDifficultyButtons = () => {
-    $("#contentContainer").empty();
-    $("#contentContainer").load("pages/content/difficultyButtons.html");
+    clearContent();
+    loadContent("pages/content/buttons/difficultyButtons.html");
 }
 
-module.exports = { loadStartButton, loadDifficultyButtons }
+const loadContent = (file, callback = ()=>{}) => {
+    $("#contentContainer").load(file, callback);
+}
+
+module.exports = { loadStartScreen, loadDifficultyButtons, clearContent, loadContent }

@@ -3,6 +3,10 @@ button {
     background-color: lightskyblue !important;
 }
 
+#contentContainer .btn {
+    margin: 4px;
+}
+
 body > :not(#modals) {
     width: calc(100% - 32px);
     max-width: 720px;

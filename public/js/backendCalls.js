@@ -1,10 +1,27 @@
-let { hideErrorMessage, showErrorMessage, showWinCondition, showLoseCondition } = require('./messaging');
-let { createInputs } = require('./htmlInjection');
-const { returnAndClearModalContent } = require('./modalControls')
+const messaging = require('./messaging');
+const htmlInjection = require('./htmlInjection');
+const { returnAndClearModalContent } = require('./modalControls');
+
+const createWordList = async () => {
+    $.ajax({
+        url: "/game/words",
+        method: "GET",
+        success: async (data) => {
+            if(data.success) {
+                console.log("words created succesfully");
+            }else{
+                console.log(data.message || "Error could not create words");
+            }
+        },
+        error: async (error) => {
+            console.log("Create Words Error: ", error);
+        }
+    })
+}
 
 const startGame = (e, difficulty) => {
     e.preventDefault();
-    hideErrorMessage();
+    messaging.hideErrorMessage();
     $.ajax({
         url: `/game/start?difficulty=${difficulty}`,
         method: "GET",
@@ -13,18 +30,18 @@ const startGame = (e, difficulty) => {
                 $("#contentContainer").empty();
                 $("#contentContainer").load(data.file, (response, status, xhr) => {
                     if(status != "error"){
-                        createInputs(0, 6, difficulty);
+                        htmlInjection.createInputs(0, 6, difficulty);
                         $(document).find('.valid').find('input').first().trigger('focus');
-                        $.get("pages/modal/buttons/backToStart.html",'', (data) => { $("#contentContainer").find('#game-buttons').append(data) });
+                        $.get("pages/content/buttons/backToStart.html",'', (data) => { $("#contentContainer").find('#game-buttons').append(data) });
                     }
                 });
 
             }else{
-                showErrorMessage("Error: Could not start the game. Please try again.");
+                messaging.showErrorMessage("Error: Could not start the game. Please try again.");
             }
         },
         error: (error) => {
-            showErrorMessage("Error: Could not start the game. Please try again.");
+            messaging.showErrorMessage("Error: Could not start the game. Please try again.");
             console.log("Start error: ", error);
         }
     })
@@ -32,7 +49,7 @@ const startGame = (e, difficulty) => {
 
 const guess = (e) => {
     e.preventDefault();
-    hideErrorMessage();
+    messaging.hideErrorMessage();
     let guess = "";
     let inputContainer = $(".inputContainer.valid");
     $(inputContainer).find("input").each((index, input) => {
@@ -47,7 +64,7 @@ const guess = (e) => {
         dataType: "json",
         success: (response) => {
             if(!response.success){
-                showErrorMessage(response.message);
+                messaging.showErrorMessage(response.message);
                 return;
             }
             let result = response.result;
@@ -79,7 +96,7 @@ const guess = (e) => {
 
             if(result.indexOf(1) == -1 && result.indexOf(0) == -1){
                 const modalContent = returnAndClearModalContent();
-                showWinCondition(modalContent, attempts);
+                messaging.showWinCondition(modalContent, attempts);
                 return
             }
 
@@ -87,7 +104,7 @@ const guess = (e) => {
 
             if(!nextContainers || !nextContainers.length){
                 const modalContent = returnAndClearModalContent();
-                showLoseCondition(modalContent, attempts);
+                messaging.showLoseCondition(modalContent, attempts);
                 return;
             }
 
@@ -97,7 +114,7 @@ const guess = (e) => {
 
         },
         error: (error) => {
-            showErrorMessage("Error: Could not submit the guess. Please try again.");
+            messaging.showErrorMessage("Error: Could not submit the guess. Please try again.");
             console.log("Guess error: ", error);
         }
     })
@@ -112,11 +129,11 @@ const getWord = (e) => {
             if(data.word) {
                 $(document).find("#correctWord").empty().append(data.word);
             }else{
-                showErrorMessage("Error: Could not get the word");
+                messaging.showErrorMessage("Error: Could not get the word");
             }
         },
         error: (error) => {
-            showErrorMessage("Error: Could not retrieve the word");
+            messaging.showErrorMessage("Error: Could not retrieve the word");
             console.log("Start error: ", error);
         }
     })
@@ -125,20 +142,20 @@ const getWord = (e) => {
 const createAccount = (username, password) => {
   e.preventDefault();
   $.ajax({
-    url: "/game/createAccount",
+    url: "/account/createAccount",
     method: "POST",
     data: JSON.stringify({"username": username, "password": password}),
     contentType: "application/json; charset=utf-8",
     dataType: "json",
     success: (data) => {
-        if(data.word) {
-            $(document).find("#correctWord").empty().append(data.word);
+        if(data.success){
+
         }else{
-            showErrorMessage("Error: Could not get the word");
+            messaging.showErrorMessage(data.message || "Error: Account could not be created");
         }
     },
     error: (error) => {
-        showErrorMessage("Error: Could not retrieve the word");
+        messaging.showErrorMessage("Error: Could not create account");
         console.log("Start error: ", error);
     }
   })
@@ -160,14 +177,32 @@ const login = (username, password) => {
         }
     },
     error: (error) => {
-        showErrorMessage("Error: Could not retrieve the word");
+        messaging.showErrorMessage("Error: Could not login to account");
         console.log("Start error: ", error);
     }
   })
 }
 
+const checkLoggedIn = () => {
+    return new Promise ((resolve, reject) => {
+        $.ajax({
+                url: "/account/loggedIn",
+                method: "GET",
+                success: (data) => {
+                    resolve(data)
+                },
+                error: (error) => {
+                    reject(error)
+                }
+        })
+    })
+}
+
 module.exports = { getWord,
     startGame,
     guess,
-    createAccount
+    createAccount,
+    login,
+    createWordList,
+    checkLoggedIn
 }

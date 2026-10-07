@@ -1,11 +1,11 @@
 const { showErrorMessage } = require('./messaging');
 const { startGame, guess, getWord } = require('./backendCalls');
-const { loadStartButton, loadDifficultyButtons } = require('./index');
-const { createInputs } = require('./htmlInjection')
-const { clearModalContent, hideModal } = require('./modalControls')
+const index = require('./index');
+const htmlInjection = require('./htmlInjection');
+const { clearModalContent, hideModal } = require('./modalControls');
 
 $(document).on("click", "#startGame", (e) =>{
-    loadDifficultyButtons();
+    index.loadDifficultyButtons();
 });
 
 $(document).on("click", ".startGame", function(e) {
@@ -67,21 +67,30 @@ $(document).on("keyup", '.lastLetter', function(e) {
     $(document).find("#guess").trigger('click');
 })
 
-$(document).on("click", '#createAccountSubmit', function (e) {
-  e.preventDefault();
+$(document).on('click', '#createAccount', async function(e) {
+    e.preventDefault();
+    index.clearContent();
+    index.loadContent("pages/content/createAccountForm.html", (response, status, xhr) =>{
+        if(status != "error"){
+            $.get("pages/content/buttons/backToStart.html",'', (data) => { $("#contentContainer").append(data) });
+        }
+    });
+})
+
+$(document).on("submit", '#createAccountForm', function (e) {
+    e.preventDefault();
+    const form = $(this);
+    
 
 })
 
-$(document).on('click', "login", function (e) {
-  e.preventDefault();
+$(document).on('submit', "login", function (e) {
+    e.preventDefault();
+    const form = $(this);
 })
-
-const handleAccountForm = () => {
-  const form = $("createAccountForm");
-}
 
 $(document).on('click', '#back', function(e) {
-    loadStartButton();
+    index.loadStartScreen();
     hideModal();
 })
 
@@ -97,12 +106,12 @@ $(document).on('click', '#playAgain', function(e) {
 
 $(document).on('click', "#changeDifficulty", function(e) {
     hideModal();
-    loadDifficultyButtons();
+    index.loadDifficultyButtons();
 })
 
 $(document).on('click', '#moreAttempts', function(e) {
     clearModalContent();
-    createInputs(0, 3, getCurrentDifficulty(),$(document).find('.inputContainer').length);
+    htmlInjection.createInputs(0, 3, getCurrentDifficulty(),$(document).find('.inputContainer').length);
     $(document).find('.valid').find('input').first().trigger('focus');
     hideModal();
 })

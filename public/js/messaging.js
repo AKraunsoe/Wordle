@@ -18,7 +18,7 @@ const showWinCondition = (modalContent, attempts) => {
             jQuery.ajaxSetup({async: true});
             $.get("pages/modal/buttons/playAgain.html",'', (data) => { modalButtons.append(data) });
             $.get("pages/modal/buttons/changeDifficulty.html",'', (data) => { modalButtons.append(data) });
-            $.get("pages/modal/buttons/backToStart.html",'', (data) => { modalButtons.append(data) });
+            $.get("pages/content/buttons/backToStart.html",'', (data) => { modalButtons.append(data) });
             setAttempts(attempts);
             showModal();
         }
@@ -36,7 +36,7 @@ const showLoseCondition = (modalContent, attempts) => {
             $.get("pages/modal/buttons/changeDifficulty.html",'', (data) => { modalButtons.append(data) });
             $.get("pages/modal/buttons/moreAttempts.html",'', (data) => { modalButtons.append(data) });
             $.get("pages/modal/buttons/showWord.html",'', (data) => { modalButtons.append(data) });
-            $.get("pages/modal/buttons/backToStart.html",'', (data) => { modalButtons.append(data) });
+            $.get("pages/content/buttons/backToStart.html",'', (data) => { modalButtons.append(data) });
             setAttempts(attempts);
             showModal();
         }

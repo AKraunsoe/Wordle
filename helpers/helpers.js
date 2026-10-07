@@ -1,12 +1,13 @@
+const {saveWords, getWordsofLength} = require('../queries/queries.js');
 
 const selectRandomWord = async (difficulty, req) => {
-    const words = await getWords(difficulty)
-    const wordCount = words.length || -1;
+    const words = await getWordsofLength(difficulty)
+    const wordCount = words.rowCount || -1;
     if(wordCount <= 0) {
         return null;
     }
     let randomNumber = Math.floor(Math.random() * wordCount);
-    const word = words[randomNumber].toUpperCase();
+    const word = words.rows[randomNumber].word.toUpperCase();
     if(!word){
         return false;
     }
@@ -17,17 +18,20 @@ const selectRandomWord = async (difficulty, req) => {
     return true;
 };
 
-const getWords = async (length) => {
+const createWords = async () => {
     const response = await fetch('https://raw.githubusercontent.com/dwyl/english-words/master/words_dictionary.json');
     const wordsData = await response.json();
-    const possibleWords = [];
+    const savedWords = [];
+    const words = Object.keys(wordsData);
 
-    Object.keys(wordsData).forEach(word =>{
-        if(word.length == length){
-            possibleWords.push(word);
+    for(const word of words){
+        if(word.length >=3 && word.length <= 7){
+            const savedWord = await saveWords(word, word.length);
+            savedWords.push(savedWord);
         }
-    })
-    return possibleWords;
+    }
+
+    return words;
 }
 
 const createWordObject = (word) => {
@@ -106,10 +110,11 @@ const matchGuess = (word, guess, difficulty) => {
     return result;
 }
 
-const login = (account) => {
+const login = async (username, password) => {
 
 }
 
 module.exports = { selectRandomWord,
   matchGuess,
-  login};
+  login,
+  createWords};
