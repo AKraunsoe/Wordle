@@ -14,6 +14,7 @@ const createWordList = async () => {
             }
         },
         error: async (error) => {
+            messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not create word list");
             console.log("Create Words Error: ", error);
         }
     })
@@ -41,7 +42,7 @@ const startGame = (e, difficulty) => {
             }
         },
         error: (error) => {
-            messaging.showErrorMessage("Error: Could not start the game. Please try again.");
+            messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not start the game. Please try again.");
             console.log("Start error: ", error);
         }
     })
@@ -114,7 +115,7 @@ const guess = (e) => {
 
         },
         error: (error) => {
-            messaging.showErrorMessage("Error: Could not submit the guess. Please try again.");
+            messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not submit the guess. Please try again.");
             console.log("Guess error: ", error);
         }
     })
@@ -133,14 +134,13 @@ const getWord = (e) => {
             }
         },
         error: (error) => {
-            messaging.showErrorMessage("Error: Could not retrieve the word");
+            messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not retrieve the word");
             console.log("Start error: ", error);
         }
     })
 }
 
 const createAccount = (username, password) => {
-  e.preventDefault();
   $.ajax({
     url: "/account/createAccount",
     method: "POST",
@@ -149,37 +149,54 @@ const createAccount = (username, password) => {
     dataType: "json",
     success: (data) => {
         if(data.success){
-
+            window.location.reload();
         }else{
             messaging.showErrorMessage(data.message || "Error: Account could not be created");
         }
     },
     error: (error) => {
-        messaging.showErrorMessage("Error: Could not create account");
-        console.log("Start error: ", error);
+        messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not create account");
+        console.log("Account error: ", error);
     }
   })
 }
 
 const login = (username, password) => {
-  e.preventDefault();
   $.ajax({
-    url: "/game/login",
+    url: "/account/login",
     method: "POST",
     data: JSON.stringify({"username": username, "password": password}),
     contentType: "application/json; charset=utf-8",
     dataType: "json",
     success: (data) => {
-        if(data.word) {
-            $(document).find("#correctWord").empty().append(data.word);
+        if(data.success) {
+            window.location.reload();
         }else{
-            showErrorMessage("Error: Could not get the word");
+            messaging.showErrorMessage(data.message || "Error: Could not log in");
         }
     },
     error: (error) => {
-        messaging.showErrorMessage("Error: Could not login to account");
-        console.log("Start error: ", error);
+        messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not login to account");
+        console.log("Login error: ", error);
     }
+  })
+}
+
+const logout = () => {
+    $.ajax({
+        url: "/account/logout",
+        method: "GET",
+        success: (data) => {
+            if(data.success) {
+                window.location.reload();
+            }else{
+                messaging.showErrorMessage(data.message || "Error: Could not log out");
+            }
+        },
+        error: (error) => {
+            messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not log out of account");
+            console.log("Logout error: ", error);
+        }
   })
 }
 
@@ -189,13 +206,78 @@ const checkLoggedIn = () => {
                 url: "/account/loggedIn",
                 method: "GET",
                 success: (data) => {
+                    $("#userContainer").text(`Welcome ${data.user}`);
                     resolve(data)
                 },
                 error: (error) => {
-                    reject(error)
+                    $("#userContainer").empty();
+                    if (error?.status !== 401) {
+                        messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not check login status");
+                    }
+                    resolve({ success: false });
                 }
         })
     })
+}
+
+const findUser = (username) => {
+    $.ajax({
+    url: "/users/search",
+    method: "POST",
+    data: JSON.stringify({"username": username}),
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: (data) => {
+        if(data.success) {
+            htmlInjection.createFriend(username);
+        }else{
+            messaging.showErrorMessage(data.message || "Error: No user with that name found");
+        }
+    },
+    error: (error) => {
+        messaging.showErrorMessage(error?.responseJSON?.message || "Error: Search for friend failed");
+        console.log("Find Friend error: ", error);
+    }
+  })
+}
+
+const addFriend = (username) => {
+    $.ajax({
+    url: "/users/addFriend",
+    method: "POST",
+    data: JSON.stringify({"username": username}),
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: (data) => {
+        if(data.success) {
+            htmlInjection.createFriend(username);
+        }else{
+            messaging.showErrorMessage(data.message || "Error: No user with that name found");
+        }
+    },
+    error: (error) => {
+        messaging.showErrorMessage(error?.responseJSON?.message || "Error: Search for friend failed");
+        console.log("Add Friend error: ", error);
+    }
+  })
+}
+
+const listFriends = () => {
+    $.ajax({
+    url: "/users/friends",
+    success: (data) => {
+        if(data.success) {
+            $('#contentContainer').empty();
+            htmlInjection.showFriends(data);
+        }else{
+            messaging.showErrorMessage(data.message || "Error: finding friends not possible");
+        }
+    },
+    error: (error) => {
+        messaging.showErrorMessage(error?.responseJSON?.message || "Error: it was not possible to find your friends");
+        console.log("Add Friend error: ", error);
+    }
+  })
 }
 
 module.exports = { getWord,
@@ -204,5 +286,9 @@ module.exports = { getWord,
     createAccount,
     login,
     createWordList,
-    checkLoggedIn
+    checkLoggedIn,
+    logout,
+    findUser,
+    addFriend,
+    listFriends
 }

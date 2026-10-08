@@ -5,9 +5,40 @@ const createAccount = async (username, password) => {
     return account;
 }
 
-const  getAccount = async (username) => {
-    const account = await pool.query(`SELECT * FROM accounts WHERE username=$1 LIMIT 1`, [id]);
+const getAccount = async (username) => {
+    const account = await pool.query(`SELECT * FROM accounts WHERE username=$1 LIMIT 1`, [username]);
     return account;
+}
+
+const findUser = async (username) => {
+    const account = await pool.query(`SELECT id, username FROM accounts WHERE username=$1 LIMIT 1`, [username]);
+    return account;
+}
+
+const addFriend = async (myId, friendId) => {
+    const friendship = await pool.query(`INSERT INTO friendships (account_id, friend_id) VALUES ($1, $2)`, [myId, friendId]);
+    return friendship;
+}
+
+const findFriendship = async (myId, friendId) => {
+    const friendship = await pool.query(`SELECT * FROM friendships WHERE (account_id = $1 AND friend_id = $2) OR (account_id = $2 AND friend_id = $1)`, [myId, friendId]);
+    return friendship;
+}
+
+const getFriends = async (id) => {
+    const friends = await pool.query(
+        `SELECT DISTINCT a.id, a.username
+         FROM friendships f
+         JOIN accounts a
+           ON a.id = CASE
+               WHEN f.account_id = $1 THEN f.friend_id
+               ELSE f.account_id
+           END
+         WHERE f.account_id = $1 OR f.friend_id = $1
+         ORDER BY a.username`,
+        [id]
+    );
+    return friends;
 }
 
 const saveWords = async (word, length) => {
@@ -29,5 +60,9 @@ module.exports = {
     getAccount,
     saveWords,
     getAllWords,
-    getWordsofLength
+    getWordsofLength,
+    findUser,
+    addFriend,
+    findFriendship,
+    getFriends
 }

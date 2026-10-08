@@ -1,4 +1,7 @@
 const {saveWords, getWordsofLength} = require('../queries/queries.js');
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+require('dotenv').config();
 
 const selectRandomWord = async (difficulty, req) => {
     const words = await getWordsofLength(difficulty)
@@ -110,11 +113,61 @@ const matchGuess = (word, guess, difficulty) => {
     return result;
 }
 
-const login = async (username, password) => {
+const hashPassword = async (password) => {
+    return bcrypt.hash(password, 10);
+}
 
+const cookieOptions = {
+        maxAge: 8 * 60 * 60 * 1000,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None'
+    }
+
+const setSessionCookie = (res, token) => {
+    res.cookie('SessionID', token, cookieOptions );
+};
+
+const login = async (account, password) => {
+    const accountData = account?.rows?.[0];
+    if (!accountData) {
+        return {
+            success: false,
+            message: "Incorrect Username or Password"
+        };
+    }
+
+    const correctPassword = await validateHash(password, accountData.password)
+    if(!correctPassword){
+        return {
+            success: false,
+            message: "Incorrect Username or Password"
+        }
+    }
+    let token;
+    try {
+        token = jwt.sign({user: accountData.id, username: accountData.username}, process.env.SECRET, {expiresIn: '8h'})
+    } catch (error) {
+        console.log(error);
+        return {
+            success: false,
+            message: "Something went wrong"
+        }
+    }
+    
+    return {success: true, token: token}
+
+}
+
+const validateHash = async (password, hashed_password) => {
+    const match = await bcrypt.compare(password, hashed_password);
+    return match
 }
 
 module.exports = { selectRandomWord,
   matchGuess,
   login,
-  createWords};
+  createWords,
+    hashPassword,
+    setSessionCookie,
+cookieOptions};

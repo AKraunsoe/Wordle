@@ -1,20 +1,34 @@
 const { showErrorMessage } = require('./messaging');
-const { startGame, guess, getWord } = require('./backendCalls');
+const backendCalls = require('./backendCalls');
 const index = require('./index');
 const htmlInjection = require('./htmlInjection');
 const { clearModalContent, hideModal } = require('./modalControls');
 
-$(document).on("click", "#startGame", (e) =>{
+$(document).on("click", "#playWordle", () =>{
     index.loadDifficultyButtons();
+});
+
+$(document).on("click", "#startGame", () =>{
+    index.clearContent();
+    index.loadContent("pages/content/buttons/gameButtons.html", (response, status, xhr) =>{
+        if(status != "error"){
+            $.get("pages/content/buttons/backToStart.html",'', (data) => { $("#contentContainer").append(data) });
+        }
+    });
 });
 
 $(document).on("click", ".startGame", function(e) {
     const $this = $(this);
-    startGame(e, $this.attr('data-length'));
+    backendCalls.startGame(e, $this.attr('data-length'));
 });
 
+$(document).on("click", "#battle", function(e){
+    e.preventDefault();
+    backendCalls.listFriends();
+})
+
 $(document).on("click", "#guess", (e) => {
-    guess(e);
+    backendCalls.guess(e);
 })
 
 $(document).on("keydown", ".letterInput", function(e) {
@@ -80,13 +94,22 @@ $(document).on('click', '#createAccount', async function(e) {
 $(document).on("submit", '#createAccountForm', function (e) {
     e.preventDefault();
     const form = $(this);
-    
-
+    const username = form.find("#username").val();
+    const password = form.find("#accountPassword").val();
+    backendCalls.createAccount(username, password);
 })
 
-$(document).on('submit', "login", function (e) {
+$(document).on('submit', '#loginForm', function (e) {
     e.preventDefault();
     const form = $(this);
+    const username = form.find("#username").val();
+    const password = form.find("#accountPassword").val();
+    backendCalls.login(username, password);
+})
+
+$(document).on('click', '#logout', function (e) {
+    e.preventDefault();
+    backendCalls.logout();
 })
 
 $(document).on('click', '#back', function(e) {
@@ -101,7 +124,7 @@ const getCurrentDifficulty = () => {
 $(document).on('click', '#playAgain', function(e) {
     clearModalContent();
     hideModal();
-    startGame(e, getCurrentDifficulty())
+    backendCalls.startGame(e, getCurrentDifficulty())
 })
 
 $(document).on('click', "#changeDifficulty", function(e) {
@@ -117,9 +140,32 @@ $(document).on('click', '#moreAttempts', function(e) {
 })
 
 $(document).on('click', '#showWord', function(e) {
-    getWord(e);
+    backendCalls.getWord(e);
 })
 
 $(document).on('click', '#modals .close', function(e){
     hideModal();
+})
+
+$(document).on('click', "#addFriends", function (e) {
+    e.preventDefault();
+    index.clearContent();
+    index.loadContent("pages/content/friendsForm.html", (response, status, xhr)=>{
+        if(status != "error"){
+            $.get("pages/content/buttons/backToStart.html", "", (data) => { $("#contentContainer").append(data) });
+        }
+    });
+})
+
+$(document).on('submit', '#friendsSearchForm', function (e) {
+    e.preventDefault();
+    const form = $(this);
+    const username = form.find("input").val();
+    backendCalls.findUser(username);
+})
+
+$(document).on('click', "#addFriend", function(e){
+    e.preventDefault();
+    const username = $(this).attr('data-username');
+    backendCalls.addFriend(username)
 })

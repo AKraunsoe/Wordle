@@ -12,9 +12,63 @@ Before running the project, make sure you have:
 
 - Node.js installed
 - npm installed
+- PostgreSQL installed and running
 - A local browser (Chrome, Edge, Firefox, etc.)
 
-## Install the project for now
+Install PostgreSQL for your operating system from the [official PostgreSQL downloads page](https://www.postgresql.org/download/). The installer includes PostgreSQL Server and can include pgAdmin, a graphical database management tool.
+
+## Set up the database
+
+Create a database named `wordle` using pgAdmin or the PostgreSQL command line. For example, connect as the PostgreSQL administrator and run:
+
+```sql
+CREATE DATABASE wordle;
+```
+
+Connect to the new `wordle` database, then create the tables used by the application:
+
+```sql
+CREATE TABLE accounts (
+   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+   username TEXT NOT NULL UNIQUE,
+   password TEXT NOT NULL
+);
+
+CREATE TABLE words (
+   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+   word TEXT NOT NULL,
+   word_length INTEGER NOT NULL
+);
+
+CREATE TABLE friendships (
+    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    friend_id  BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (account_id, friend_id),
+    CHECK (account_id < friend_id)
+);
+```
+
+For `psql`, connect to the database with `psql -U postgres -d wordle`, then paste the `CREATE TABLE` statements. Replace `postgres` with your PostgreSQL role if you use a different one.
+
+## Configure environment variables
+
+Create a `.env` file in the project root (beside `package.json`) with the connection string for your local database and a private secret used to sign login tokens and Express sessions:
+
+```dotenv
+DATABASE_URL=postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/wordle
+SECRET=YOUR_RANDOM_SECRET
+```
+
+Replace `YOUR_POSTGRES_PASSWORD` with the password for your PostgreSQL role. Generate a strong value for `SECRET` by running this from the project directory:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Copy the generated value into `SECRET`. Keep `.env` private and do not commit real credentials or secrets to source control.
+
+## Install the project
 
 From the project folder, run:
 

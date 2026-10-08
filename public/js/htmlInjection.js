@@ -29,4 +29,45 @@ const createInputs = (startIndex, endIndex, difficulty, incrementer = 0) => {
 
 }
 
-module.exports = { createInputs };
+const createFriend = (username) => {
+    const friendsList = $(document).find('#friendSearchResults');
+    friendsList.empty();
+
+    const friendItem = $('<div>').addClass('friend-search-result d-flex align-items-stretch gap-2');
+    const friendName = $('<span>').addClass('d-flex align-items-center flex-grow-1').text(username);
+    const addFriendButton = $('<button>')
+        .attr('type', 'button')
+        .attr('id', 'addFriend')
+        .attr('data-username', username)
+        .addClass('btn')
+        .text('+');
+
+    friendItem.append(friendName, addFriendButton);
+    friendsList.append(friendItem);
+}
+
+const showFriends = (data) => {
+    const contentContainer = $(document).find('#contentContainer').empty();
+
+    if (data.friendCount === 0) {
+        contentContainer.append($('<p>').text('looks like you have no friends'));
+        return;
+    }
+
+    for (const friend of data.friends) {
+        const username = friend.username;
+        const friendItem = $('<div>').addClass('friend-search-result d-flex align-items-stretch gap-2');
+        const friendName = $('<span>').addClass('d-flex align-items-center flex-grow-1').text(username);
+        const battleButton = $('<button>')
+            .attr('type', 'button')
+            .attr('data-username', username)
+            .attr('startBattle')
+            .addClass('btn')
+            .text('Battle');
+
+        friendItem.append(friendName, battleButton);
+        contentContainer.append(friendItem, $('<br>'));
+    }
+}
+
+module.exports = { createInputs, createFriend, showFriends };

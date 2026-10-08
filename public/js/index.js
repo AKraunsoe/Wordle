@@ -22,17 +22,25 @@ const loadStartScreen = () => {
     clearContent()
     loadContent("pages/content/startPage.html", async (response, status, xhr) => {
         const loggedIn = await checkLoggedIn()
-        if(status != "error" && !loggedIn.success){
-            //jQuery.ajaxSetup({async: true});
-            $.get("pages/content/buttons/createAccount.html", "", (data) => { $("#contentContainer").append(data) })
-            $.get("pages/content/loginForm.html",'', (data) => { $("#contentContainer").append(data) });
+        if(status != "error"){
+            if(!loggedIn.success){
+                $.get("pages/content/buttons/createAccount.html", "", (data) => { $("#contentContainer").append(data) });
+                $.get("pages/content/loginForm.html",'', (data) => { $("#contentContainer").append(data) });
+            }else{
+                $.get("pages/content/buttons/addFriends.html", "", (data) => { $("#contentContainer").append(data) });
+                $.get("pages/content/buttons/logoutButton.html", "", (data) => { $("#contentContainer").append(data) });
+            }
         }
     });
 }
 
 const loadDifficultyButtons = () => {
     clearContent();
-    loadContent("pages/content/buttons/difficultyButtons.html");
+    loadContent("pages/content/buttons/difficultyButtons.html", (response, status, xhr) =>{
+        if(status != "error"){
+            $.get("pages/content/buttons/backToStart.html",'', (data) => { $("#contentContainer").append(data) });
+        }
+    });
 }
 
 const loadContent = (file, callback = ()=>{}) => {

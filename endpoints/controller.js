@@ -51,34 +51,138 @@ const createAccount = async (req, res) => {
   const username = body.username;
   const password = body.password;
 
-  if (await queries.getAccount()) {
+  let account = await queries.getAccount(username)
+
+  if (account.rowCount) {
     res.status(400).json({ success: false, message: "User already exists, please try another one" });
     return;
   }
+  try{
+    const password_hash = await helpers.hashPassword(password);
 
-  const account = await queries.createAccount(username, password);
+    await queries.createAccount(username, password_hash);
+    account = await queries.getAccount(username)
 
-  if (account) {
-    helpers.login(username, password);
-    res.status(200).json({ success: true });
-    return
+    if (account.rowCount) {
+      const loggedIn = await helpers.login(account, password);
+      if (!loggedIn.success) {
+        res.status(500).json({ success: false, message: "Account created, but login failed" });
+        return;
+      }
+
+      helpers.setSessionCookie(res, loggedIn.token);
+      res.status(201).json({ success: true });
+    }
+  } catch (error) {
+    if (error.code === '23505') {
+      res.status(409).json({ success: false, message: "User already exists, please try another one" });
+      return;
+    }
+    console.error('Account creation failed:', error);
+    res.status(500).json({ success: false, message: "Unable to create account" });
   }
-
-  res.status(400).json({ success: false, message: "Unable to create user, please try again" });
 }
 
 const login = async (req, res) => {
   const body = req.body;
   const username = body.username;
   const password = body.password;
+  
+  try {
+    const account = await queries.getAccount(username)
 
-  if (await !queries.getAccount(username)) {
-    res.status(400).json({ success: false, message: "Account not found, please try again" });
+    if (!account.rowCount) {
+      res.status(400).json({ success: false, message: "Incorrect Username or Password" });
+      return;
+    }
+
+    const loggedIn = await helpers.login(account, password);
+    if (!loggedIn.success) {
+      res.status(401).json({ success: false, message: loggedIn.message });
+      return;
+    }
+
+    helpers.setSessionCookie(res, loggedIn.token);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Login failed:', error);
+    res.status(500).json({ success: false, message: "Unable to log in" });
+  }
+}
+
+const logout = async (req, res) => {
+    res.clearCookie("SessionID", helpers.cookieOptions);
+    res.status(200).json({ success: true });
+}
+
+const findUser = async (req, res) => {
+    const username = req.body.username;
+    if(!username){
+      res.status(400).json({success: false, message: "No username to search for provided"});
+      return;
+    }
+
+    if(username == req.user.username){
+      res.status(400).json({success: false, message: "You cannot add yourself as a friend, try searching for someone else"});
+      return;
+    }
+
+    const account = await queries.findUser(username);
+    if(!account.rowCount){
+      res.status(401).json({success: false, message: "No user found"});
+      return;
+    }
+
+    const isFriend = await queries.findFriendship(req.user.id, account.rows[0].id);
+    if(isFriend.rowCount){
+      res.status(400).json({success: false, message: "You are already friends with the user, please search for a user you are not friends with."})
+      return;
+    }
+
+    res.status(200).json({success: true});
+}
+
+const addFriend = async (req, res) => {
+  const username = req.body.username;
+  if(!username){
+    res.status(400).json({success: false, message: "No username to search for provided"});
     return;
   }
 
-  await helpers.login(username, password);
-  res.status(200).json({ success: true });
+  if(username == req.user.username){
+    res.status(400).json({success: false, message: "You cannot add yourself as a friend, try searching for someone else"});
+    return;
+  }
+
+  const account = await queries.findUser(username);
+  if(!account.rowCount){
+    res.status(401).json({success: false, message: "User doesn't exist"});
+    return;
+  }
+
+  const isFriend = await queries.findFriendship(req.user.id, account.rows[0].id);
+  if(isFriend.rowCount){
+    res.status(400).json({success: false, message: "You are already friends with the user"})
+    return;
+  }
+
+  const friend = await queries.addFriend(req.user.id, account.rows[0].id);
+
+  if(!friend.rowCount){
+    res.status(400).json({success: false, message: "Friendship could not be created"});
+    return;
+  }
+  
+  res.status(200).json({success: true, message: `${username} has been added to your friendslist`})
+  
+}
+
+const getFriends = async (req, res) => {
+    const user = req.user;
+
+    const friends = await queries.getFriends(user.id);
+
+    res.status(200).json({friends: friends.rows, friendCount: friends.rowCount})
 }
 
 const createWords = async (req, res) => {
@@ -97,7 +201,7 @@ const createWords = async (req, res) => {
 
 const checkLoggedIn = (req, res) => {
   //check if logged in
-  res.status(200).json({success: false})
+  res.status(200).json({success: !!req.user, user: req?.user?.username})
 }
 
 module.exports = { 
@@ -107,4 +211,8 @@ module.exports = {
   createAccount, 
   login, 
   createWords,
-  checkLoggedIn };
+  checkLoggedIn,
+  logout,
+  findUser,
+  addFriend,
+  getFriends};

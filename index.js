@@ -4,10 +4,12 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const app = express();
 const port = 3000;
+require('dotenv').config();
 const controller = require('./endpoints/controller');
+const { Verify } = require('./endpoints/middleware');
 
 app.use(session({
-    secret: "test",
+    secret: process.env.SECRET,
     resave: false,
     saveUninitialized: true,
 }))
@@ -41,13 +43,30 @@ app.post('/account/login', (req, res) => {
   controller.login(req, res);
 })
 
+app.get('/account/logout', (req, res) => {
+  controller.logout(req, res);
+})
+
 // On Load Functionality
 app.get('/game/words', async(req, res) => {
   await controller.createWords(req, res);
 })
 
-app.get('/account/loggedIn', (req, res) => {
+app.get('/account/loggedIn', Verify,  (req, res) => {
   controller.checkLoggedIn(req, res);
+})
+
+//User Functionality
+app.post('/users/search', Verify, (req, res) => {
+  controller.findUser(req, res);
+})
+
+app.post('/users/addFriend', Verify, (req, res) =>{
+  controller.addFriend(req, res);
+})
+
+app.get('/users/friends', Verify, (req, res) => {
+  controller.getFriends(req, res);
 })
 
 app.listen(port, () => {
