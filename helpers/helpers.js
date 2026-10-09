@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
 
-const selectRandomWord = async (difficulty, req) => {
+const selectRandomWord = async (difficulty) => {
     const words = await getWordsofLength(difficulty)
     const wordCount = words.rowCount || -1;
     if(wordCount <= 0) {
@@ -14,12 +14,24 @@ const selectRandomWord = async (difficulty, req) => {
     if(!word){
         return false;
     }
-    //req.session.selectedWord = "APPLE";
-    req.session.selectedWord = word;
-    //const wordObject = createWordObject(word);
-    //req.session.wordObject = wordObject;
-    return true;
+    return word;
 };
+
+const createBattleWords = async () => {
+    const result = []
+    for (let j = 0; j < 2; j++) {
+        let words = [];
+        for (let i = 0; i < 3; i++) {
+            let word = await selectRandomWord(5);
+            if(!word){
+                return null;
+            }
+            words.push(word);
+        }
+        result.push(words);
+    }
+    return result;
+}
 
 const createWords = async () => {
     const response = await fetch('https://raw.githubusercontent.com/dwyl/english-words/master/words_dictionary.json');
@@ -164,10 +176,13 @@ const validateHash = async (password, hashed_password) => {
     return match
 }
 
+
+
 module.exports = { selectRandomWord,
   matchGuess,
   login,
   createWords,
     hashPassword,
     setSessionCookie,
-cookieOptions};
+cookieOptions,
+createBattleWords};

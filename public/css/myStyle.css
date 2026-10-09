@@ -20,6 +20,53 @@ button {
     margin: 0 !important;
 }
 
+.friend-search-result {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 40px;
+    margin: 0 auto 8px;
+}
+
+.friend-search-result:first-child {
+    margin-top: 10px;
+}
+
+.friend-search-result .friend-status,
+.friend-search-result .friend-name,
+.friend-search-result .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+}
+
+.friend-search-result .friend-name {
+    white-space: nowrap;
+    font-size: 1.2em;
+}
+
+.friend-search-result .friend-status {
+    font-size: 1.2em;
+}
+
+.friend-search-result .btn {
+    --bs-btn-border-width: 1px;
+    padding: 0 1px;
+    font-size: 1.2em;
+    height: 25px;
+    line-height: 1;
+}
+
+.friend-status.text-success {
+    color: #198754 !important;
+}
+
+.friend-status.text-danger {
+    color: #dc3545 !important;
+}
+
 body > :not(#modals) {
     width: calc(100% - 32px);
     max-width: 720px;

@@ -46,26 +46,34 @@ const createFriend = (username) => {
     friendsList.append(friendItem);
 }
 
-const showFriends = (data) => {
-    const contentContainer = $(document).find('#contentContainer').empty();
+const showFriends = (contentContainer, data) => {
+    contentContainer.empty();
 
     if (data.friendCount === 0) {
-        contentContainer.append($('<p>').text('looks like you have no friends'));
+        contentContainer.append($('<p>').text('looks like you have no friends. Battle mode only works with friends at the moment'));
         return;
     }
 
     for (const friend of data.friends) {
         const username = friend.username;
-        const friendItem = $('<div>').addClass('friend-search-result d-flex align-items-stretch gap-2');
-        const friendName = $('<span>').addClass('d-flex align-items-center flex-grow-1').text(username);
+        const online = friend.online;
+        const friendItem = $('<div>').addClass('friend-search-result');
+        const statusIndicator = $('<span>')
+            .addClass(`friend-status ${online ? 'text-success' : 'text-danger'}`)
+            .attr('role', 'img')
+            .attr('aria-label', online ? 'Online' : 'Offline')
+            .text(online ? '●' : 'X');
+        const friendName = $('<span>').addClass('friend-name').text(username);
         const battleButton = $('<button>')
             .attr('type', 'button')
             .attr('data-username', username)
-            .attr('startBattle')
+            .attr('data-online', online)
+            .attr('id', 'startBattle')
             .addClass('btn')
+            .prop('disabled', !online)
             .text('Battle');
 
-        friendItem.append(friendName, battleButton);
+        friendItem.append(statusIndicator, friendName, battleButton);
         contentContainer.append(friendItem, $('<br>'));
     }
 }

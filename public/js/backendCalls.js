@@ -267,8 +267,9 @@ const listFriends = () => {
     url: "/users/friends",
     success: (data) => {
         if(data.success) {
-            $('#contentContainer').empty();
-            htmlInjection.showFriends(data);
+            const contentContainer = $('#contentContainer')
+            htmlInjection.showFriends(contentContainer, data);
+            $.get("pages/content/buttons/backToStart.html", "", (data) => { $("#contentContainer").append(data) });
         }else{
             messaging.showErrorMessage(data.message || "Error: finding friends not possible");
         }
@@ -278,6 +279,107 @@ const listFriends = () => {
         console.log("Add Friend error: ", error);
     }
   })
+}
+
+const requestBattleEvent = (username) => {
+    return new Promise ((resolve, reject) => {
+        $.ajax({
+        url: "/game/requestbattle",
+        method: "POST",
+        data: JSON.stringify({"username": username}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: (data) => {
+            if(data.success) {
+                resolve(data);
+            }else{
+                
+                messaging.showErrorMessage(data.message || "Error: finding friends not possible");
+                resolve(data)
+            }
+        },
+        error: (error) => {
+            messaging.showErrorMessage(error?.responseJSON?.message || "Error: it was not possible to find your friends");
+            console.log("Add Friend error: ", error);
+            resolve({success: false})
+        }
+    })
+    });
+}
+
+const battleRequestResponse = (invitationId, answer) => {
+    return new Promise ((resolve, reject) => {
+        $.ajax({
+        url: "/game/battle",
+        method: "POST",
+        data: JSON.stringify({"invitationId": invitationId, "answer": answer}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: (data) => {
+            if(data.success) {
+                resolve(data);
+            }else{
+                messaging.showErrorMessage(data.message || "Error: finding friends not possible");
+                resolve(data)
+            }
+        },
+        error: (error) => {
+            messaging.showErrorMessage(error?.responseJSON?.message || "Error: it was not possible to find your friends");
+            console.log("Add Friend error: ", error);
+            resolve({success: false})
+        }
+    })
+    });
+}
+
+const battleGuess = (e, force) => {
+    e.preventDefault();
+    messaging.hideErrorMessage();
+    let guess = "";
+    let inputContainer = $(".inputContainer.valid");
+    $(inputContainer).find("input").each((index, input) => {
+        guess += $(input).val();
+    });
+
+    $.ajax({
+        url: "/game/battleguess",
+        method: "POST",
+        data: JSON.stringify({"guess": guess, "force": force}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: (response) => {
+            if(!response.success){
+                messaging.showErrorMessage(response.message);
+                return;
+            }
+            let result = response.result;
+            const inputs = $(".valid").find("input");
+            for(let i = 0; i < result.length; i++){
+                let keyboardKey = $(document).find(`.keyboard-key[data-letter=${$(inputs[i]).val()}]`)
+                let keyboardValue = keyboardKey.attr('data-value')
+                if(result[i] === 2){
+                    if(!keyboardValue || keyboardValue != 2){
+                        keyboardKey.attr('data-value', 2);
+                    }
+                    $(inputs[i]).css("background-color", "LightGreen");
+                }else if(result[i] === 1){
+                    if(!keyboardValue || keyboardValue < 1){
+                        keyboardKey.attr('data-value', 1);
+                    }
+                    $(inputs[i]).css("background-color", "LemonChiffon");
+                }else{
+                    if(keyboardValue == ""){
+                        keyboardKey.attr('data-value', 0);
+                    }
+                    $(inputs[i]).css("background-color", "LightCoral");
+                }
+            }
+        },
+        error: (error) => {
+            messaging.showErrorMessage(error?.responseJSON?.message || "Error: Could not submit the guess. Please try again.");
+            console.log("Guess error: ", error);
+        }
+    })
 }
 
 module.exports = { getWord,
@@ -290,5 +392,8 @@ module.exports = { getWord,
     logout,
     findUser,
     addFriend,
-    listFriends
+    listFriends,
+    requestBattleEvent,
+    battleRequestResponse,
+    battleGuess
 }

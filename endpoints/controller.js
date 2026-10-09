@@ -1,7 +1,6 @@
-const express = require('express');
-const path = require('path');
-const app = express();
+const { randomUUID } = require("node:crypto");
 const helpers = require('../helpers/helpers');
+const { isOnline } = require('../helpers/presence');
 const queries = require('../queries/queries');
 
 const startGame = async (req, res) => {
@@ -16,8 +15,11 @@ const startGame = async (req, res) => {
 
     req.session.difficulty = difficulty;
     const success = await helpers.selectRandomWord(difficulty, req);
-
-    res.json({success: success,
+    if(success){
+      req.session.selectedWord = word;
+    }
+   
+    res.json({success: !!success,
       file: "/pages/content/game.html"});
 }
 
@@ -177,12 +179,137 @@ const addFriend = async (req, res) => {
   
 }
 
-const getFriends = async (req, res) => {
-    const user = req.user;
+const getFriends = async (req, res, battleManager) => {
+  const user = req.user;
 
-    const friends = await queries.getFriends(user.id);
+  const friends = await queries.getFriends(user.id);
+  const friendsWithPresence = friends.rows.map((friend) => ({
+    ...friend,
+    online: isOnline(friend.id),
+    inCombat: battleManager.isBusy(friend.id.toString())
+  }));
 
-    res.status(200).json({friends: friends.rows, friendCount: friends.rowCount})
+  res.status(200).json({
+    success: true,
+    friends: friendsWithPresence,
+    friendCount: friends.rowCount,
+  });
+}
+
+const requestBattle = async (req, res, battleManager) => {
+  const body = req.body;
+  const requestedUser = body.username;
+
+  if(!requestedUser){
+    res.status(400).json({success: false, message: "No user provided"});
+    return;
+  }
+
+  const userAccount = await queries.getAccount(requestedUser);
+
+  if(!userAccount.rowCount){
+    res.status(400).json({success: false, message: "No user found"});
+    return;
+  }
+
+  const targetId = userAccount.rows[0].id;
+  const online = isOnline(targetId);
+
+  if(!online){
+    res.status(400).json({success: false, message: "Player is not online"});
+    return
+  }
+
+  const isFriend = await queries.findFriendship(req.user.id, targetId);
+
+  if(!isFriend.rowCount){
+    res.status(400).json({success: false, message: "You are not friends with the given user"});
+    return
+  }
+
+  const invitationCreated = battleManager.requestInvitation(req.user, userAccount.rows[0])
+
+  if(!invitationCreated.success){
+    res.status(400).json(invitationCreated);
+    return;
+  }
+
+  res.status(202).json(invitationCreated)
+}
+
+const battleResponse = async (req, res, battleManager) => {
+  const body = req.body;
+  const invitationId = body.invitationId;
+  const answer = body.answer;
+
+  if(answer == null || answer == "" || (answer != true && answer != false)){
+    res.status(400).json({success: false, message: "Answer not provided"});
+    return;
+  }
+
+  if(!invitationId){
+    res.status(400).json({success: false, message: "No invitation id provided"});
+    return;
+  }
+
+  const battleInvitation = battleManager.getInvitation(invitationId);
+
+  if(!battleInvitation){
+    res.status(400).json({success: false, message: "No Battle request found"});
+    return;
+  }
+
+  const targetId = battleInvitation.from.id;
+  const online = isOnline(targetId);
+
+  if(!online){
+    battleManager.releaseInvitation(battleInvitation);
+    res.status(400).json({success: false, message: "Player is no longer online, battle request has been deleted"});
+    return
+  }
+
+  const invitationResponse = await battleManager.respondToInvitation(invitationId, req.user.id, answer);
+
+  if(!invitationResponse.success){
+    res.status(400).json(invitationResponse);
+    return;
+  }
+
+  res.status(202).json(invitationResponse);
+}
+
+const battleGuess = async (req, res, battleManager) => {
+  const inBattle = battleManager.getPlayerBattle(req.user.id.toString());
+
+  if(!inBattle.success){
+    if(inBattle.redirect){
+
+    }else{
+      
+    }
+    delete inBattle.redirect;
+    res.status(400).json(inBattle)
+    return;
+  }
+
+  const selectedWord = inBattle.battle.players[req.user.username].words[inBattle.battle.currentWord];
+
+  if(!selectedWord) {
+      res.status(400).json({success: false, message: "No word to match versus. Please try starting a new game."});
+      return;
+  }
+
+  const guess = req.body.guess;
+  if(!guess || guess.length !== selectedWord.length) {
+      res.status(400).json({success: false, message: "No guess provided or guess does not match word length, please try again."});
+      return;
+  }
+
+  const result = helpers.matchGuess(selectedWord, guess, 5);
+
+  const turn = battleManager.takeTurn(inBattle.battle.id, result)
+
+  res.json(turn);
 }
 
 const createWords = async (req, res) => {
@@ -215,4 +342,7 @@ module.exports = {
   logout,
   findUser,
   addFriend,
-  getFriends};
+  getFriends,
+  requestBattle,
+  battleResponse,
+  battleGuess};

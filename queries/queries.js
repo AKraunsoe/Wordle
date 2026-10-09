@@ -54,6 +54,20 @@ const getWordsofLength = async(length) => {
 const getAllWords = async () => {
     return await pool.query(`SELECT * FROM words LIMIT 2000`);
 }
+/*
+const storeInvitation = async (invitationId, inviter, invitee) => {
+    const battle = await pool.query(`INSERT INTO battles (id, inviter, invitee) VALUES ($1, $2, $3)`, [invitationId, inviter, invitee]);
+    return battle;
+}
+
+const isInBattle = async (user) => {
+    const battle = await pool.query(`SELECT id from battles where inviter = $1 or invitee = $1`, [user]);
+    return battle.rowCount;
+}
+
+const stopBatle = async (invitationId) => {
+    await pool.query(`DELETE from battles where id =$1`, [invitationId]);
+}*/
 
 module.exports = {
     createAccount,

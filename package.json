@@ -19,7 +19,9 @@
     "express-session": "^1.19.0",
     "jquery": "^4.0.0",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
     "webpack": "^5.111.1",

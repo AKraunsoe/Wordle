@@ -2,7 +2,8 @@ const { showErrorMessage } = require('./messaging');
 const backendCalls = require('./backendCalls');
 const index = require('./index');
 const htmlInjection = require('./htmlInjection');
-const { clearModalContent, hideModal } = require('./modalControls');
+const { clearModalContent, hideModal, showBattleWaitingModal, showBattleFailureModal, showBattleRequestModal } = require('./modalControls');
+const socket = require('./socket');
 
 $(document).on("click", "#playWordle", () =>{
     index.loadDifficultyButtons();
@@ -28,7 +29,15 @@ $(document).on("click", "#battle", function(e){
 })
 
 $(document).on("click", "#guess", (e) => {
-    backendCalls.guess(e);
+    if(!$(this).attr('data-battle')){
+        backendCalls.guess(e);
+    }else{
+        if($(this).closest('#game-buttons').attr('data-state') == 'take_turn'){
+            const force = $(this).attr('data-force');
+            $(this).removeAttr('data-force');
+            backendCalls.battleGuess(e, force);
+        }
+    }
 })
 
 $(document).on("keydown", ".letterInput", function(e) {
@@ -122,8 +131,9 @@ const getCurrentDifficulty = () => {
 }
 
 $(document).on('click', '#playAgain', function(e) {
-    clearModalContent();
+    e.preventDefault();
     hideModal();
+    clearModalContent();
     backendCalls.startGame(e, getCurrentDifficulty())
 })
 
@@ -133,10 +143,11 @@ $(document).on('click', "#changeDifficulty", function(e) {
 })
 
 $(document).on('click', '#moreAttempts', function(e) {
-    clearModalContent();
+    e.preventDefault();
     htmlInjection.createInputs(0, 3, getCurrentDifficulty(),$(document).find('.inputContainer').length);
     $(document).find('.valid').find('input').first().trigger('focus');
     hideModal();
+    clearModalContent();
 })
 
 $(document).on('click', '#showWord', function(e) {
@@ -146,6 +157,12 @@ $(document).on('click', '#showWord', function(e) {
 $(document).on('click', '#modals .close', function(e){
     hideModal();
 })
+
+$(document).on('click', '#closeBattleModal', function(e) {
+    e.preventDefault();
+    hideModal();
+    clearModalContent();
+});
 
 $(document).on('click', "#addFriends", function (e) {
     e.preventDefault();
@@ -169,3 +186,85 @@ $(document).on('click', "#addFriend", function(e){
     const username = $(this).attr('data-username');
     backendCalls.addFriend(username)
 })
+
+$(document).on('click', "#startBattle", async function (e) {
+    e.preventDefault();
+    const modalError = $('.modal-error');
+    modalError.empty();
+    const $this = $(this);
+    if (!$this.attr('data-online') || $this.attr('data-online') == "false"){
+        return;
+    }
+    const username = $this.attr('data-username');
+    const requestSent = await backendCalls.requestBattleEvent(username);
+    if(requestSent.success){
+        showBattleWaitingModal(username);
+    }else{
+        modalError.append(requestSent.message || "Something went wrong requesting the battle");
+    }
+    
+    //showBattleFailureModal(); 
+})
+
+$(document).on('click', "#acceptBattle", async function(e) {
+    e.preventDefault();
+    const invitationId = $('.modal').attr('data-invite');
+    const modalError = $('.modal-error');
+    modalError.empty();
+
+    const requestSent = await backendCalls.battleRequestResponse(invitationId, true);
+    if(requestSent.success){
+        showBattleWaitingModal($(this).attr('data-username'));
+    }else{
+        modalError.append(requestSent.message || "Something went wrong sending battle response");
+    }
+})
+
+$(document).on('click', "#declineBattle", async function(e) {
+    e.preventDefault();
+    const modal = $('.modal');
+    const invitationId = $('.modal').attr('data-invite');
+    const modalError = $('.modal-error');
+    modalError.empty();
+
+    const requestSent = await backendCalls.battleRequestResponse(invitationId, false);
+    if(requestSent.success){
+        modal.removeAttr('data-invite');
+        hideModal();
+        clearModalContent();
+        //trigger battle
+    }else{
+        modalError.append(requestSent.message || "Something went wrong sending battle response");
+    }
+})
+
+socket.on("battle:invite", ({ invitationId, from }) => {
+  showBattleRequestModal(invitationId, from.username)
+});
+
+socket.on("battle:started", (state) => {
+  renderBattleState(state)
+})
+
+socket.on("battle:turn", (state) => {
+  renderBattleState(state)
+})
+
+socket.on("battle:invite:declined", ({invitationId, message}) => {
+  //Trigger cancel Battle Event
+  showBattleFailureModal(message);
+});
+
+socket.on("battle:invite:expired", ({ message }) => {
+  showBattleFailureModal(message);
+});
+
+socket.on("battle:invite:cancelled", ({ invitationId }) => {
+  const modal = $("#myModal");
+
+  if (modal.attr("data-invite") === invitationId) {
+    modal.removeAttr("data-invite");
+    clearModalContent();
+    hideModal();
+  }
+});

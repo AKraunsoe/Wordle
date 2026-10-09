@@ -1,4 +1,5 @@
 const {createWordList, checkLoggedIn} = require('./backendCalls');
+const socket = require('./socket');
 
 $(() => {
     const now = new Date().getMilliseconds()
@@ -27,6 +28,17 @@ const loadStartScreen = () => {
                 $.get("pages/content/buttons/createAccount.html", "", (data) => { $("#contentContainer").append(data) });
                 $.get("pages/content/loginForm.html",'', (data) => { $("#contentContainer").append(data) });
             }else{
+                if(!socket.connected){
+                    socket.connect();
+                    socket.on("connect", () => {
+                        console.log("Realtime connection established");
+                    });
+
+                    socket.on("connect_error", (error) => {
+                        console.log("Realtime connection failed:", error.message);
+                    });
+                }
+                
                 $.get("pages/content/buttons/addFriends.html", "", (data) => { $("#contentContainer").append(data) });
                 $.get("pages/content/buttons/logoutButton.html", "", (data) => { $("#contentContainer").append(data) });
             }
